@@ -19,15 +19,19 @@ ATTR_STOP_ID = "Stop ID"
 ATTR_ROUTE = "Route"
 ATTR_DUE_IN = "Due in"
 ATTR_DUE_AT = "Due at"
+ATTR_OCCUPANCY = "Occupancy"
 ATTR_NEXT_UP = "Next train"
 ATTR_NEXT_UP_DUE_IN = "Next train due in"
+ATTR_NEXT_OCCUPANCY = "Next train occupancy"
 
+CONF_API_KEY = 'api_key'
+CONF_APIKEY = 'apikey'
 CONF_X_API_KEY = 'x_api_key'
 CONF_STOP_ID = 'stopid'
 CONF_ROUTE = 'route'
 CONF_DEPARTURES = 'departures'
 CONF_TRIP_UPDATE_URL = 'trip_update_url'
-CONF_DIRECTION = 'direction'
+CONF_VEHICLE_POSITION_URL = 'vehicle_position_url'
 
 DEFAULT_NAME = 'Next Train'
 ICON = 'mdi:train'
@@ -38,8 +42,10 @@ TIME_STR_FORMAT = "%H:%M"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_TRIP_UPDATE_URL): cv.string,
+    vol.Optional(CONF_API_KEY): cv.string,
     vol.Optional(CONF_X_API_KEY): cv.string,
-    vol.Optional(CONF_DIRECTION): cv.string,
+    vol.Optional(CONF_APIKEY): cv.string,
+    vol.Optional(CONF_VEHICLE_POSITION_URL): cv.string,
     vol.Optional(CONF_DEPARTURES): [{
         vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
         vol.Required(CONF_STOP_ID): cv.string,
@@ -66,7 +72,7 @@ def due_in_minutes(timestamp):
 
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Get the Dublin public transport sensor."""
-    data = PublicTransportData(config.get(CONF_TRIP_UPDATE_URL), config.get(CONF_X_API_KEY))
+    data = PublicTransportData(config.get(CONF_TRIP_UPDATE_URL), config.get(CONF_VEHICLE_POSITION_URL), config.get(CONF_API_KEY), config.get(CONF_X_API_KEY), config.get(CONF_APIKEY))
     sensors = []
     for departure in config.get(CONF_DEPARTURES):
         sensors.append(PublicTransportSensor(
@@ -114,12 +120,14 @@ class PublicTransportSensor(Entity):
         }
         if len(next_trains) > 0:
             attrs[ATTR_DUE_AT] = next_trains[0].arrival_time.strftime(TIME_STR_FORMAT) if len(next_trains) > 0 else '-'
+            attrs[ATTR_OCCUPANCY] = next_trains[0].occupancy
             if next_trains[0].position:
                 attrs[ATTR_LATITUDE] = next_trains[0].position.latitude
                 attrs[ATTR_LONGITUDE] = next_trains[0].position.longitude
         if len(next_trains) > 1:
             attrs[ATTR_NEXT_UP] = next_trains[1].arrival_time.strftime(TIME_STR_FORMAT) if len(next_trains) > 1 else '-'
             attrs[ATTR_NEXT_UP_DUE_IN] = due_in_minutes(next_trains[1].arrival_time) if len(next_trains) > 1 else '-'
+            attrs[ATTR_NEXT_OCCUPANCY] = next_trains[1].occupancy
         return attrs
 
     @property
