@@ -1,10 +1,10 @@
 {
     "domain": "gtfs_rt",
     "name": "GTFS-Realtime",
-    "documentation": "https://github.com/brianmagicr/ha-gtfs-rt",
+    "documentation": "https://github.com/brianmagicr/HA-Train",
     "dependencies": [],
     "codeowners": ["@brianmagicr"],
-    "version": "1.1",
+    "version": "1.0",
     "requirements": [
         "gtfs-realtime-bindings==1.0.0"
     ]
