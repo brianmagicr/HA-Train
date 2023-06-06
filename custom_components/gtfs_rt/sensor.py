@@ -140,15 +140,11 @@ class PublicTransportSensor(Entity):
 class PublicTransportData(object):
     """The Class for handling the data retrieval."""
 
-    def __init__(self, trip_update_url, vehicle_position_url=None, api_key=None, x_api_key=None, apikey=None):
+    def __init__(self, trip_update_url, x_api_key=None):
         """Initialize the info object."""
         self._trip_update_url = trip_update_url
         self._vehicle_position_url = vehicle_position_url
-        if api_key is not None:
-            self._headers = {'Authorization': api_key}
-        elif apikey is not None:
-            self._headers = {'apikey': apikey}    
-        elif x_api_key is not None:
+        if x_api_key is not None:
             self._headers = {'x-api-key': x_api_key}
         else:
             self._headers = None
