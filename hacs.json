@@ -1,5 +1,5 @@
 {
-  "name": "GTFS-Realtime",
-  "render_readme": true,
+  "name": "HA Traintime",
+  "render_readme": false,
   "domains": ["sensor"]
 }
