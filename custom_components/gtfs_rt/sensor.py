@@ -19,10 +19,8 @@ ATTR_STOP_ID = "Stop ID"
 ATTR_ROUTE = "Route"
 ATTR_DUE_IN = "Due in"
 ATTR_DUE_AT = "Due at"
-ATTR_OCCUPANCY = "Occupancy"
 ATTR_NEXT_UP = "Next train"
 ATTR_NEXT_UP_DUE_IN = "Next train due in"
-ATTR_NEXT_OCCUPANCY = "Next train occupancy"
 
 CONF_API_KEY = 'api_key'
 CONF_APIKEY = 'apikey'
@@ -120,14 +118,12 @@ class PublicTransportSensor(Entity):
         }
         if len(next_trains) > 0:
             attrs[ATTR_DUE_AT] = next_trains[0].arrival_time.strftime(TIME_STR_FORMAT) if len(next_trains) > 0 else '-'
-            attrs[ATTR_OCCUPANCY] = next_trains[0].occupancy
             if next_trains[0].position:
                 attrs[ATTR_LATITUDE] = next_trains[0].position.latitude
                 attrs[ATTR_LONGITUDE] = next_trains[0].position.longitude
         if len(next_trains) > 1:
             attrs[ATTR_NEXT_UP] = next_trains[1].arrival_time.strftime(TIME_STR_FORMAT) if len(next_trains) > 1 else '-'
             attrs[ATTR_NEXT_UP_DUE_IN] = due_in_minutes(next_trains[1].arrival_time) if len(next_trains) > 1 else '-'
-            attrs[ATTR_NEXT_OCCUPANCY] = next_trains[1].occupancy
         return attrs
 
     @property
