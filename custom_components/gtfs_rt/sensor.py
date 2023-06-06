@@ -24,8 +24,6 @@ ATTR_NEXT_UP = "Next train"
 ATTR_NEXT_UP_DUE_IN = "Next train due in"
 ATTR_NEXT_OCCUPANCY = "Next train occupancy"
 
-CONF_API_KEY = 'api_key'
-CONF_APIKEY = 'apikey'
 CONF_X_API_KEY = 'x_api_key'
 CONF_STOP_ID = 'stopid'
 CONF_ROUTE = 'route'
@@ -42,8 +40,6 @@ TIME_STR_FORMAT = "%H:%M"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_TRIP_UPDATE_URL): cv.string,
-    vol.Optional(CONF_API_KEY): cv.string,
-    vol.Optional(CONF_X_API_KEY): cv.string,
     vol.Optional(CONF_APIKEY): cv.string,
     vol.Optional(CONF_VEHICLE_POSITION_URL): cv.string,
     vol.Optional(CONF_DEPARTURES): [{
@@ -53,16 +49,6 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     }]
 })
 
-class OccupancyStatus(Enum):
-    EMPTY = 0
-    MANY_SEATS_AVAILABLE = 1
-    FEW_SEATS_AVAILABLE = 2
-    STANDING_ROOM_ONLY = 3
-    CRUSHED_STANDING_ROOM_ONLY = 4
-    FULL = 5
-    NOT_ACCEPTING_PASSENGERS = 6
-    NO_DATA_AVAILABLE = 7
-    NOT_BOARDABLE = 8
 
 def due_in_minutes(timestamp):
     """Get the remaining minutes from now until a given datetime object."""
@@ -234,5 +220,4 @@ class PublicTransportData(object):
                 continue
             positions[vehicle.vehicle.id] = vehicle.position
             vehicles_trips[vehicle.trip.trip_id] = vehicle.vehicle.id
-            occupancy[vehicle.vehicle.id] = OccupancyStatus(vehicle.occupancy_status).name
         return positions, vehicles_trips, occupancy
