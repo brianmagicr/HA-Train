@@ -19,15 +19,21 @@ ATTR_STOP_ID = "Stop ID"
 ATTR_ROUTE = "Route"
 ATTR_DUE_IN = "Due in"
 ATTR_DUE_AT = "Due at"
+ATTR_OCCUPANCY = "Occupancy"
 ATTR_NEXT_UP = "Next train"
 ATTR_NEXT_UP_DUE_IN = "Next train due in"
+ATTR_NEXT_OCCUPANCY = "Next train occupancy"
 
+CONF_API_KEY = 'api_key'
+CONF_APIKEY = 'apikey'
 CONF_X_API_KEY = 'x_api_key'
 CONF_STOP_ID = 'stopid'
 CONF_ROUTE = 'route'
 CONF_DEPARTURES = 'departures'
-CONF_DIRECTION = 'direction'
-DEFAULT_NAME = 'Next train'
+CONF_TRIP_UPDATE_URL = 'trip_update_url'
+CONF_VEHICLE_POSITION_URL = 'vehicle_position_url'
+
+DEFAULT_NAME = 'Next Train'
 ICON = 'mdi:train'
 
 MIN_TIME_BETWEEN_UPDATES = datetime.timedelta(seconds=60)
@@ -35,14 +41,28 @@ TIME_STR_FORMAT = "%H:%M"
 
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Required(CONF_X_API_KEY): cv.string,
-    vol.Optional(CONF_DIRECTION): cv.string,
+    vol.Required(CONF_TRIP_UPDATE_URL): cv.string,
+    vol.Optional(CONF_API_KEY): cv.string,
+    vol.Optional(CONF_X_API_KEY): cv.string,
+    vol.Optional(CONF_APIKEY): cv.string,
+    vol.Optional(CONF_VEHICLE_POSITION_URL): cv.string,
     vol.Optional(CONF_DEPARTURES): [{
         vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
         vol.Required(CONF_STOP_ID): cv.string,
         vol.Required(CONF_ROUTE): cv.string
     }]
 })
+
+class OccupancyStatus(Enum):
+    EMPTY = 0
+    MANY_SEATS_AVAILABLE = 1
+    FEW_SEATS_AVAILABLE = 2
+    STANDING_ROOM_ONLY = 3
+    CRUSHED_STANDING_ROOM_ONLY = 4
+    FULL = 5
+    NOT_ACCEPTING_PASSENGERS = 6
+    NO_DATA_AVAILABLE = 7
+    NOT_BOARDABLE = 8
 
 def due_in_minutes(timestamp):
     """Get the remaining minutes from now until a given datetime object."""
@@ -68,13 +88,12 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
 class PublicTransportSensor(Entity):
     """Implementation of a public transport sensor."""
 
-    def __init__(self, data, stop, route, name, direction):
+    def __init__(self, data, stop, route, name):
         """Initialize the sensor."""
         self.data = data
+        self._name = name
         self._stop = stop
         self._route = route
-        self._name = name
-        self._direction = direction
         self.update()
 
     @property
@@ -129,10 +148,15 @@ class PublicTransportSensor(Entity):
 class PublicTransportData(object):
     """The Class for handling the data retrieval."""
 
-    def __init__(self, trip_update_url,x_api_key=None):
+    def __init__(self, trip_update_url, vehicle_position_url=None, api_key=None, x_api_key=None, apikey=None):
         """Initialize the info object."""
+        self._trip_update_url = trip_update_url
         self._vehicle_position_url = vehicle_position_url
-        if x_api_key is not None:
+        if api_key is not None:
+            self._headers = {'Authorization': api_key}
+        elif apikey is not None:
+            self._headers = {'apikey': apikey}    
+        elif x_api_key is not None:
             self._headers = {'x-api-key': x_api_key}
         else:
             self._headers = None
@@ -140,17 +164,18 @@ class PublicTransportData(object):
 
     @Throttle(MIN_TIME_BETWEEN_UPDATES)
     def update(self):
-        positions, vehicles_trips if self._vehicle_position_url else [{}, {}]
-        self._update_route_statuses(positions, vehicles_trips)
+        positions, vehicles_trips, occupancy = self._get_vehicle_positions() if self._vehicle_position_url else [{}, {}, {}]
+        self._update_route_statuses(positions, vehicles_trips, occupancy)
 
-    def _update_route_statuses(self, vehicles_trips):
+    def _update_route_statuses(self, vehicle_positions, vehicles_trips, vehicle_occupancy):
         """Get the latest data."""
         from google.transit import gtfs_realtime_pb2
 
         class StopDetails:
-            def __init__(self, arrival_time, position):
+            def __init__(self, arrival_time, position, occupancy):
                 self.arrival_time = arrival_time
                 self.position = position
+                self.occupancy = occupancy
 
         feed = gtfs_realtime_pb2.FeedMessage()
         response = requests.get(self._trip_update_url, headers=self._headers)
@@ -178,7 +203,9 @@ class PublicTransportData(object):
                     if int(stop.arrival.time) > int(time.time()):
                         # Use stop departure time; fall back on stop arrival time if not available
                         details = StopDetails(
-                            datetime.datetime.fromtimestamp(stop.arrival.time)
+                            datetime.datetime.fromtimestamp(stop.arrival.time),
+                            vehicle_positions.get(vehicle_id),
+                            vehicle_occupancy.get(vehicle_id)
                         )
                         departure_times[route_id][stop_id].append(details)
 
@@ -198,6 +225,7 @@ class PublicTransportData(object):
         feed.ParseFromString(response.content)
         positions = {}
         vehicles_trips = {}
+        occupancy = {}
 
         for entity in feed.entity:
             vehicle = entity.vehicle
@@ -206,4 +234,5 @@ class PublicTransportData(object):
                 continue
             positions[vehicle.vehicle.id] = vehicle.position
             vehicles_trips[vehicle.trip.trip_id] = vehicle.vehicle.id
-        return positions, vehicles_trips
+            occupancy[vehicle.vehicle.id] = OccupancyStatus(vehicle.occupancy_status).name
+        return positions, vehicles_trips, occupancy
