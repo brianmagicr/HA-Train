@@ -7,7 +7,7 @@ from enum import Enum
 import voluptuous as vol
 
 from homeassistant.components.sensor import PLATFORM_SCHEMA
-from homeassistant.const import (CONF_NAME)
+from homeassistant.const import (CONF_NAME, ATTR_LONGITUDE, ATTR_LATITUDE)
 import homeassistant.util.dt as dt_util
 from homeassistant.helpers.entity import Entity
 from homeassistant.util import Throttle
