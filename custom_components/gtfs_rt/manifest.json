@@ -1,6 +1,6 @@
 {
     "domain": "gtfs_rt",
-    "name": "GTFS-Realtime",
+    "name": "HA Traintime",
     "documentation": "https://github.com/brianmagicr/HA-Train",
     "dependencies": [],
     "codeowners": ["@brianmagicr"],
