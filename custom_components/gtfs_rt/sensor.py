@@ -25,14 +25,11 @@ ATTR_NEXT_UP = "Next train"
 ATTR_NEXT_UP_DUE_IN = "Next train due in"
 
 
-CONF_API_KEY = 'api_key'
-CONF_APIKEY = 'apikey'
 CONF_X_API_KEY = 'x_api_key'
 CONF_STOP_ID = 'stopid'
 CONF_ROUTE = 'route'
 CONF_DEPARTURES = 'departures'
 CONF_TRIP_UPDATE_URL = 'trip_update_url'
-CONF_VEHICLE_POSITION_URL = 'vehicle_position_url'
 
 DEFAULT_NAME = 'Next train'
 ICON = 'mdi:train'
@@ -147,7 +144,6 @@ class PublicTransportData(object):
 	def __init__(self, trip_update_url, x_api_key=None):
 		"""Initialize the info object."""
 		self._trip_update_url = trip_update_url
-		self._vehicle_position_url = vehicle_position_url
 		if x_api_key is not None:
 			self._headers = {'x-api-key': x_api_key}
 		else:
